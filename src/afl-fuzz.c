@@ -145,7 +145,7 @@ static void usage(u8 *argv0, int more_help) {
 #endif
       "  -O            - use binary-only instrumentation (FRIDA mode)\n"
 #if defined(__linux__)
-      "  -Q            - use binary-only instrumentation (QEMU mode)\n"
+      "  -Q mode       - use binary-only instrumentation (QEMU mode user / external)\n"
       "  -U            - use unicorn-based instrumentation (Unicorn mode)\n"
       "  -W            - use qemu-based instrumentation with Wine (Wine mode)\n"
 #endif
@@ -552,7 +552,7 @@ int main(int argc, char **argv_orig, char **envp) {
   while (
       (opt = getopt(
            argc, argv,
-           "+Ab:B:c:CdDe:E:hi:I:f:F:g:G:l:L:m:M:nNOo:p:RQs:S:t:T:UV:WXx:YZ")) >
+           "+Ab:B:c:CdDe:E:hi:I:f:F:g:G:l:L:m:M:nNOo:p:RQ:s:S:t:T:UV:WXx:YZ")) >
       0) {
 
     switch (opt) {
@@ -1024,8 +1024,14 @@ int main(int argc, char **argv_orig, char **envp) {
 
         if (afl->fsrv.qemu_mode) { FATAL("Multiple -Q options not supported"); }
 
-        afl->fsrv.qemu_mode = 1;
-
+        if (!strcmp(optarg, "user")) {
+          afl->fsrv.qemu_mode = 1;
+        } else if (!strcmp(optarg, "external")) {
+          afl->fsrv.qemu_mode = 2;
+        } else {
+          FATAL("Invalid -Q argument");
+        }
+        
         if (!mem_limit_given) { afl->fsrv.mem_limit = MEM_LIMIT_QEMU; }
 
         break;
@@ -1954,7 +1960,11 @@ int main(int argc, char **argv_orig, char **envp) {
 
   }
 
-  check_binary(afl, argv[optind]);
+  if (afl->fsrv.qemu_mode == 1) {
+    check_binary(afl, argv[optind]);
+  } else {
+    afl->fsrv.target_path = NULL;
+  }
 
   #ifdef AFL_PERSISTENT_RECORD
   if (unlikely(afl->fsrv.persistent_record)) {
@@ -1987,7 +1997,7 @@ int main(int argc, char **argv_orig, char **envp) {
     } else {
 
       use_argv = get_qemu_argv(argv[0], &afl->fsrv.target_path, argc - optind,
-                               argv + optind);
+                               argv + optind, afl->fsrv.qemu_mode);
 
     }
 

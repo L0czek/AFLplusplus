@@ -48,7 +48,7 @@ char **argv_cpy_dup(int argc, char **argv);
 void   argv_cpy_free(char **argv);
 
 char **get_cs_argv(u8 *own_loc, u8 **target_path_p, int argc, char **argv);
-char **get_qemu_argv(u8 *own_loc, u8 **target_path_p, int argc, char **argv);
+char **get_qemu_argv(u8 *own_loc, u8 **target_path_p, int argc, char **argv, int mode);
 char **get_wine_argv(u8 *own_loc, u8 **target_path_p, int argc, char **argv);
 char  *get_afl_env(char *env);
 

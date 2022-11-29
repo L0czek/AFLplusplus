@@ -234,17 +234,7 @@ char **get_cs_argv(u8 *own_loc, u8 **target_path_p, int argc, char **argv) {
 
 /* Rewrite argv for QEMU. */
 
-char **get_qemu_argv(u8 *own_loc, u8 **target_path_p, int argc, char **argv) {
-
-  if (unlikely(getenv("AFL_QEMU_CUSTOM_BIN"))) {
-
-    WARNF(
-        "AFL_QEMU_CUSTOM_BIN is enabled. "
-        "You must run your target under afl-qemu-trace on your own!");
-    return argv;
-
-  }
-
+char **get_qemu_user_argv(u8 *own_loc, u8 **target_path_p, int argc, char **argv) {
   char **new_argv = ck_alloc(sizeof(char *) * (argc + 3));
   if (unlikely(!new_argv)) { FATAL("Illegal amount of arguments specified"); }
 
@@ -258,6 +248,35 @@ char **get_qemu_argv(u8 *own_loc, u8 **target_path_p, int argc, char **argv) {
   *target_path_p = new_argv[0] = find_afl_binary(own_loc, "afl-qemu-trace");
   return new_argv;
 
+}
+
+char **get_qemu_external_argv(u8 *own_loc, u8 **target_path_p, int argc, char **argv) {
+  char **new_argv = ck_alloc(sizeof(char *) * (argc + 3));
+  if (unlikely(!new_argv)) { FATAL("Illegal amount of arguments specified"); }
+
+  memcpy(&new_argv[0], &argv[0], (int) (sizeof(char *) * argc));
+
+  *target_path_p = new_argv[0] = find_afl_binary(own_loc, new_argv[0]);
+  return new_argv;
+}
+
+char **get_qemu_argv(u8 *own_loc, u8 **target_path_p, int argc, char **argv, int qemu_mode) {
+  if (unlikely(getenv("AFL_QEMU_CUSTOM_BIN"))) {
+
+    WARNF(
+        "AFL_QEMU_CUSTOM_BIN is enabled. "
+        "You must run your target under afl-qemu-trace on your own!");
+    return argv;
+
+  }
+
+  char **new_argv = NULL;
+  switch (qemu_mode) {
+    case 1: new_argv = get_qemu_user_argv(own_loc, target_path_p, argc, argv); break;
+    case 2: new_argv = get_qemu_external_argv(own_loc, target_path_p, argc, argv); break;
+  }
+    
+  return new_argv;
 }
 
 /* Rewrite argv for Wine+QEMU. */

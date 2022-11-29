@@ -1160,7 +1160,7 @@ int main(int argc, char **argv_orig, char **envp) {
     } else {
 
       use_argv = get_qemu_argv(argv[0], &fsrv->target_path, argc - optind,
-                               argv + optind);
+                               argv + optind, fsrv->qemu_mode);
 
     }
 
